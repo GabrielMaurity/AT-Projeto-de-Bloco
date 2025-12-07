@@ -10,9 +10,9 @@ public record Product(
         @NotNull @Positive BigDecimal price,
         @Min(0) int stock,
         @NotNull Category category,
-        UUID supplierId // <--- CAMPO NOVO (INTEGRAÇÃO)
+        UUID supplierId
 ) {
-    // Atualizando o objeto nulo para ter o campo novo
+    // CORREÇÃO: Constante necessária para os testes antigos
     public static final Product NULL_PRODUCT = new Product(
             UUID.fromString("00000000-0000-0000-0000-000000000000"),
             "N/A", new BigDecimal("0.01"), 0, Category.FOOD, null
