@@ -1,88 +1,70 @@
 package br.com.infnet.controller;
 
+import br.com.infnet.exception.BusinessException;
 import br.com.infnet.model.Category;
 import br.com.infnet.model.Product;
 import br.com.infnet.service.ProductService;
-import br.com.infnet.view.ProductView;
-
+import br.com.infnet.service.SupplierService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+@Controller
 public class ProductController {
-    private final ProductService service;
-    private final ProductView view;
 
-    public ProductController(ProductService service, ProductView view) {
-        this.service = service;
-        this.view = view;
+    private final ProductService productService;
+    private final SupplierService supplierService; // Injeção do novo serviço
+
+    public ProductController(ProductService productService, SupplierService supplierService) {
+        this.productService = productService;
+        this.supplierService = supplierService;
     }
 
-    public void start() {
-        boolean running = true;
-        while (running) {
-            try {
-                String option = view.showMenuAndGetOption();
-                switch (option) {
-                    case "1" -> createProduct();
-                    case "2" -> listProducts();
-                    case "3" -> findProduct();
-                    case "4" -> updateProduct();
-                    case "5" -> deleteProduct();
-                    case "0" -> {
-                        running = false;
-                        view.showMessage("Encerrando...");
-                    }
-                    default -> view.showMessage("Opção inválida.");
-                }
-            } catch (Exception e) {
-                view.showMessage("Erro: " + e.getMessage());
-            }
+    @GetMapping("/")
+    public String listProducts(Model model) {
+        model.addAttribute("products", productService.getAll());
+        return "list";
+    }
+
+    @GetMapping("/new")
+    public String showCreateForm(Model model) {
+        model.addAttribute("categories", Category.values());
+        model.addAttribute("suppliers", supplierService.getAll()); // Passa fornecedores p/ tela
+        return "form";
+    }
+
+    @PostMapping("/save")
+    public String saveProduct(@RequestParam String name,
+                              @RequestParam BigDecimal price,
+                              @RequestParam int stock,
+                              @RequestParam Category category,
+                              @RequestParam(required = false) UUID supplierId, // Recebe o ID do fornecedor
+                              Model model) {
+        try {
+            // Cria o objeto Product com o supplierId
+            Product p = new Product(null, name, price, stock, category, supplierId);
+            productService.create(p);
+            return "redirect:/";
+        } catch (BusinessException e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("categories", Category.values());
+            model.addAttribute("suppliers", supplierService.getAll());
+            return "form";
         }
     }
 
-    private void createProduct() {
-        view.showMessage("--- Novo Produto ---");
-        String name = view.askForString("Nome: ");
-        BigDecimal price = view.askForBigDecimal("Preço: ");
-        int stock = view.askForInt("Estoque: ");
-        Category cat = view.askForCategory();
-
-        UUID id = service.createProduct(name, price, stock, cat);
-        view.showMessage("Sucesso! ID: " + id);
+    @GetMapping("/delete/{id}")
+    public String deleteProduct(@PathVariable UUID id) {
+        productService.delete(id);
+        return "redirect:/";
     }
 
-    private void listProducts() {
-        view.showProductList(service.getAllProducts(), service);
-    }
-
-    private void findProduct() {
-        UUID id = view.askForUUID("ID: ");
-        Product p = service.getProductById(id);
-        if (p.equals(Product.NULL_PRODUCT)) {
-            view.showMessage("Não encontrado.");
-        } else {
-            view.showProductDetails(p);
-        }
-    }
-
-    private void updateProduct() {
-        UUID id = view.askForUUID("ID para atualizar: ");
-        if (service.getProductById(id).equals(Product.NULL_PRODUCT)) {
-            view.showMessage("Produto não existe.");
-            return;
-        }
-        String name = view.askForString("Novo Nome: ");
-        BigDecimal price = view.askForBigDecimal("Novo Preço: ");
-        int stock = view.askForInt("Novo Estoque: ");
-        Category cat = view.askForCategory();
-
-        service.updateProduct(id, name, price, stock, cat);
-        view.showMessage("Atualizado com sucesso.");
-    }
-
-    private void deleteProduct() {
-        UUID id = view.askForUUID("ID para deletar: ");
-        service.deleteProduct(id);
-        view.showMessage("Deletado.");
+    // Rota de teste chaos mantida
+    @GetMapping("/chaos/timeout")
+    public String triggerTimeout() {
+        productService.simulateSlowDatabase();
+        return "redirect:/";
     }
 }

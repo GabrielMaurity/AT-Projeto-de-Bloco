@@ -1,17 +1,11 @@
 package br.com.infnet;
 
-import br.com.infnet.controller.ProductController;
-import br.com.infnet.service.ProductService;
-import br.com.infnet.view.ProductView;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public class App
-{
-    public static void main( String[] args )
-    {
-        ProductService model = new ProductService();
-        ProductView view = new ProductView();
-        ProductController controller = new ProductController(model, view);
-
-        controller.start();
+@SpringBootApplication
+public class App {
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
     }
 }
