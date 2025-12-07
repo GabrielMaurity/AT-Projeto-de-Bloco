@@ -28,18 +28,26 @@ class ProductInterfaceTest {
     void setup() {
         ChromeOptions options = new ChromeOptions();
 
-        // CONFIGURAÇÃO PARA CI/CD (Headless automático no GitHub)
         String headless = System.getProperty("headless");
         if ("true".equals(headless)) {
             options.addArguments("--headless");
         }
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--no-sandbox"); // Necessário para ambiente Docker/CI
+        options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
 
         driver = new ChromeDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-        baseUrl = "http://localhost:" + port;
+
+        // --- MUDANÇA PARA O TRABALHO 5 ---
+        // Se passarmos uma URL específica (ex: ambiente de produção), usamos ela.
+        // Se não, usamos o localhost padrão.
+        String targetUrl = System.getProperty("targetUrl");
+        if (targetUrl != null && !targetUrl.isEmpty()) {
+            baseUrl = targetUrl;
+        } else {
+            baseUrl = "http://localhost:" + port; // Fallback para teste local (@SpringBootTest)
+        }
     }
 
     @AfterEach void tearDown() { if (driver != null) driver.quit(); }
@@ -57,7 +65,4 @@ class ProductInterfaceTest {
         formPage.submit();
         Assertions.assertTrue(listPage.hasProductWithName("Selenium Phone"));
     }
-
-    // ... Mantenha os outros testes (paramétricos e de erro) iguais ...
-    // Eles continuarão funcionando pois o HTML novo é compatível.
 }
