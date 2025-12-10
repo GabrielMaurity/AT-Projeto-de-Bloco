@@ -1,93 +1,24 @@
-name: Enterprise CI/CD
+name: CI Simples
 
-on:
-  push:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 
 jobs:
-  # === AMBIENTE 1: DESENVOLVIMENTO (Build + Unit Tests) ===
-  build-dev:
-    name: 🏗️ Dev - Build
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Java 17
+      # 1. Baixa o código
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Configura o Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build & Unit Test
-        run: mvn clean package -DskipTests
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-jar
-          path: target/*.jar
-
-  # === AMBIENTE 2: TESTE/STAGING (Deploy Simulado + Selenium) ===
-  deploy-staging:
-    name: 🧪 Staging - Verify
-    needs: build-dev
-    runs-on: ubuntu-latest
-    environment: staging # <--- RUBRICA: AMBIENTE SEPARADO
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-jar
-          path: target/
-
-      # RUBRICA: Segredos e Variáveis
-      - name: Load Environment Secrets
-        run: echo "Carregando segredo DB_PASS=${{ secrets.GITHUB_TOKEN }} (Simulado)"
-
-      - name: Start App (Deploy)
-        run: |
-          nohup java -jar target/*.jar > staging.log 2>&1 &
-          echo "Iniciando Staging..."
-
-      # HEALTH CHECK (O segredo para não falhar)
-      - name: Wait for App
-        run: |
-          for i in {1..20}; do
-            if curl -s http://localhost:8080 > /dev/null; then
-              echo "App is UP!"
-              exit 0
-            fi
-            echo "Waiting..."
-            sleep 3
-          done
-          exit 1
-
-      # RUBRICA: Testes Pós-Deploy
-      - name: Run E2E Tests
-        run: mvn test -Dtest=ProductInterfaceTest -DargLine="-Dheadless=true -DtargetUrl=http://localhost:8080"
-
-      # RUBRICA: Monitoramento Logs
-      - name: Upload Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: staging-logs
-          path: staging.log
-
-  # === AMBIENTE 3: PRODUÇÃO ===
-  deploy-prod:
-    name: 🚀 Production - Live
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    environment: production # <--- RUBRICA: AMBIENTE SEPARADO
-    steps:
-      - name: Simulate Deploy
-        run: echo "Deploying version ${{ github.run_number }} to Production Server..."
+      # 3. Roda os testes (Modo Headless obrigatório para não travar)
+      - name: Testar
+        run: mvn clean test -DargLine="-Dheadless=true"

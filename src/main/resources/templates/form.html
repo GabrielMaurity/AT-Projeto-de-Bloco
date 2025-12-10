@@ -1,26 +1,31 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Novo Produto Integrado</title>
+    <title>Cadastro de Produto</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-4">
-<h2>Cadastrar Produto (Integrado)</h2>
+<h2>Formulário de Produto</h2>
 
 <div th:if="${error}" class="alert alert-danger" th:text="${error}" id="msg-erro"></div>
 
 <form action="/save" method="post">
+    <input type="hidden" name="id" th:value="${product != null ? product.id : ''}">
+
     <div class="mb-3">
         <label>Nome:</label>
-        <input type="text" name="name" class="form-control" id="input-nome" required>
+        <input type="text" name="name" class="form-control" id="input-nome"
+               th:value="${product != null ? product.name : ''}" required>
     </div>
     <div class="mb-3">
         <label>Preço:</label>
-        <input type="number" step="0.01" name="price" class="form-control" id="input-preco" required>
+        <input type="number" step="0.01" name="price" class="form-control" id="input-preco"
+               th:value="${product != null ? product.price : ''}" required>
     </div>
     <div class="mb-3">
         <label>Estoque:</label>
-        <input type="number" name="stock" class="form-control" id="input-estoque" required>
+        <input type="number" name="stock" class="form-control" id="input-estoque"
+               th:value="${product != null ? product.stock : ''}" required>
     </div>
 
     <div class="mb-3">
@@ -31,9 +36,9 @@
     </div>
 
     <div class="mb-3">
-        <label>Fornecedor (Integração):</label>
+        <label>Fornecedor:</label>
         <select name="supplierId" class="form-select">
-            <option value="">Selecione um Fornecedor...</option>
+            <option value="">Selecione...</option>
             <option th:each="s : ${suppliers}" th:value="${s.id}" th:text="${s.companyName}"></option>
         </select>
     </div>

@@ -13,7 +13,9 @@ public class ProductService implements CrudService<Product> { // Refatoração: 
 
     @Override
     public void create(Product p) {
-        if("ERROR".equals(p.name())) throw new BusinessException("Simulação de erro!");
+        if("ERROR".equalsIgnoreCase(p.name())) {
+            throw new BusinessException("Simulação de erro crítico!");
+        }
 
         UUID id = (p.id() != null) ? p.id() : UUID.randomUUID();
         // Salva com o supplierId

@@ -71,26 +71,28 @@ class ProductInterfaceTest {
     @DisplayName("2. Fluxo: Editar Produto")
     void testUpdate() {
         driver.get(baseUrl);
+        String uniqueName = "UpdateTest-" + System.currentTimeMillis();
+        String editedName = uniqueName + "-EDITED";
 
-        // 1. Garante que existe um produto para editar (cria um novo agora)
+
         new ProductListPage(driver).clickNewProduct();
         ProductFormPage formCreate = new ProductFormPage(driver);
-        formCreate.fillForm("Produto Para Editar", "10.00", "5", "FOOD");
+        formCreate.fillForm(uniqueName, "10.00", "5", "FOOD");
         formCreate.submit();
 
-        // 2. Agora edita
+
         ProductListPage list = new ProductListPage(driver);
-        list.clickEditProduct("Produto Para Editar");
+        list.clickEditProduct(uniqueName); // Agora usa Javascript Click
 
         ProductFormPage formEdit = new ProductFormPage(driver);
-        formEdit.fillForm("Produto Editado", "150.00", "20", "BOOKS");
+        formEdit.fillForm(editedName, "150.00", "20", "BOOKS");
         formEdit.submit();
 
-        // 3. Verifica
-        Assertions.assertTrue(list.hasProductWithName("Produto Editado"));
+
+        Assertions.assertTrue(list.hasProductWithName(editedName));
     }
 
-    // --- RUBRICA: Todas as Interações (DELETE) ---
+
     @Test
     @Order(3)
     @DisplayName("3. Fluxo: Excluir Produto")
