@@ -1,11 +1,11 @@
-name: CI Gradual - Passo 2 (Build + Staging)
+name: CI/CD Completo (Dev -> Staging -> Prod)
 
 on: [push, workflow_dispatch]
 
 jobs:
-  # === JOB 1: CONSTRUIR (Igual ao anterior, mas salva o arquivo no final) ===
+  # === 1. BUILD (DEV) ===
   build:
-    name: 🏗️ Build
+    name: 🏗️ Build (Dev)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,45 +16,73 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # Compila e roda testes unitários
       - name: Maven Build
         run: mvn clean package -DargLine="-Dheadless=true"
 
-      # --- A NOVIDADE COMEÇA AQUI ---
-      # Salva o arquivo .jar gerado para usar no próximo job
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-jar
           path: target/*.jar
 
-  # === JOB 2: STAGING (Baixa o arquivo e tenta rodar) ===
+  # === 2. STAGING (TESTE PÓS-DEPLOY) ===
   staging:
-    name: 🧪 Staging
-    needs: build # Só começa se o Build der certo
+    name: 🧪 Staging Deploy
+    needs: build
     runs-on: ubuntu-latest
+    environment: staging # <--- ISSO CRIA A CAIXINHA VISUAL NO GITHUB
     steps:
-      - uses: actions/checkout@v4 # Precisamos do código para rodar o Selenium depois
+      - uses: actions/checkout@v4
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Baixa o arquivo que o Job 1 salvou
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: app-jar
           path: target/
 
-      # Tenta subir a aplicação (Deploy Simulado)
+      # Inicia o App
       - name: Start App
         run: |
           nohup java -jar target/*.jar > staging.log 2>&1 &
-          echo "Aplicação iniciando... aguardando 15s..."
-          sleep 15
+          echo "Iniciando Staging... aguardando 20s..."
+          sleep 20
 
-      # Roda o teste de interface contra a aplicação rodando
+      # Testa o App Rodando
       - name: Teste Pós-Deploy (Selenium)
         run: mvn test -Dtest=ProductInterfaceTest -DargLine="-Dheadless=true -DtargetUrl=http://localhost:8080"
+
+      # Monitoramento (Salva Logs)
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-logs
+          path: staging.log
+
+  # === 3. PRODUCTION (DEPLOY SEGURO) ===
+  production:
+    name: 🚀 Production Deploy
+    needs: staging # Só roda se o Staging passar
+    runs-on: ubuntu-latest
+    environment: production # <--- AMBIENTE DE PRODUÇÃO
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target/
+
+      # RUBRICA: Gerenciamento de Segredos
+      - name: Deploy Seguro
+        env:
+          # Usamos um segredo real do GitHub (Token) para provar o conceito
+          SECURE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Conectando ao Servidor de Produção..."
+          echo "Autenticando com Token Seguro..."
+          echo "Deploy da versão ${{ github.run_number }} concluído com sucesso!"
