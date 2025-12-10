@@ -66,21 +66,27 @@ class ProductInterfaceTest {
         Assertions.assertTrue(new ProductListPage(driver).hasProductWithName("Produto Base"));
     }
 
-    // --- RUBRICA: Todas as Interações (UPDATE) ---
     @Test
     @Order(2)
     @DisplayName("2. Fluxo: Editar Produto")
     void testUpdate() {
         driver.get(baseUrl);
+
+        // 1. Garante que existe um produto para editar (cria um novo agora)
+        new ProductListPage(driver).clickNewProduct();
+        ProductFormPage formCreate = new ProductFormPage(driver);
+        formCreate.fillForm("Produto Para Editar", "10.00", "5", "FOOD");
+        formCreate.submit();
+
+        // 2. Agora edita
         ProductListPage list = new ProductListPage(driver);
-        // Clica no botão de editar do produto criado acima
-        list.clickEditProduct("Produto Base");
+        list.clickEditProduct("Produto Para Editar");
 
-        ProductFormPage form = new ProductFormPage(driver);
-        // Altera o nome
-        form.fillForm("Produto Editado", "150.00", "20", "BOOKS");
-        form.submit();
+        ProductFormPage formEdit = new ProductFormPage(driver);
+        formEdit.fillForm("Produto Editado", "150.00", "20", "BOOKS");
+        formEdit.submit();
 
+        // 3. Verifica
         Assertions.assertTrue(list.hasProductWithName("Produto Editado"));
     }
 

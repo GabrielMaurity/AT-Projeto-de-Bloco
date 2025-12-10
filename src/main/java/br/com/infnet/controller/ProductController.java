@@ -35,23 +35,34 @@ public class ProductController {
         return "form";
     }
 
+
     @PostMapping("/save")
     public String saveProduct(@RequestParam String name,
                               @RequestParam BigDecimal price,
                               @RequestParam int stock,
                               @RequestParam Category category,
-                              @RequestParam(required = false) UUID supplierId, // Recebe o ID do fornecedor
+                              @RequestParam(required = false) UUID supplierId,
                               Model model) {
         try {
+            // --- CORREÇÃO: Validação Manual para garantir o teste de erro ---
+            if (price.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException("Preço deve ser maior que zero.");
+            }
+            if (stock < 0) {
+                throw new BusinessException("Estoque não pode ser negativo.");
+            }
+
             // Cria o objeto Product com o supplierId
             Product p = new Product(null, name, price, stock, category, supplierId);
             productService.create(p);
             return "redirect:/";
+
         } catch (BusinessException e) {
+            // Se der erro, volta pro formulário com a mensagem
             model.addAttribute("error", e.getMessage());
             model.addAttribute("categories", Category.values());
             model.addAttribute("suppliers", supplierService.getAll());
-            return "form";
+            return "form"; // Renderiza form.html novamente
         }
     }
 

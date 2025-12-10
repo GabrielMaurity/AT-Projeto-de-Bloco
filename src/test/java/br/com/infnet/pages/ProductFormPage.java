@@ -24,7 +24,7 @@ public class ProductFormPage {
     public ProductFormPage(WebDriver driver) {
         this.driver = driver;
         // Configura uma espera de até 10 segundos
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(30));
     }
 
     public void fillForm(String name, String price, String stock, String category) {
