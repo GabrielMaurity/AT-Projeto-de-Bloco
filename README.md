@@ -1,8 +1,9 @@
 # Sistema de Gestão de Produtos e Fornecedores (Enterprise CRUD)
 
-![Java](https://img.shields.io/badge/Java-17-orange)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.1.5-green)
-![Selenium](https://img.shields.io/badge/Selenium-Testing-blue)
+![Java](https://img.shields.io/badge/Java-17-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot)
+![Selenium](https://img.shields.io/badge/-selenium-%2343B02A?style=for-the-badge&logo=selenium&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
 
 ## 🏗️ Arquitetura do Sistema
 O sistema foi desenvolvido seguindo os princípios de **Clean Code** e **Arquitetura em Camadas**:
