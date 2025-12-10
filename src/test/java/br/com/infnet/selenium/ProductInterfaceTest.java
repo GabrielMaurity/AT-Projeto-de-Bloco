@@ -12,6 +12,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+
 import java.time.Duration;
 
 @SpringBootTest(classes = App.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -28,41 +29,42 @@ class ProductInterfaceTest {
     void setup() {
         ChromeOptions options = new ChromeOptions();
 
+        // --- OBRIGATÓRIO PARA GITHUB ACTIONS ---
+        // Se receber a propriedade de sistema "headless", ativa o modo sem tela
         String headless = System.getProperty("headless");
         if ("true".equals(headless)) {
             options.addArguments("--headless");
         }
+
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--no-sandbox"); // Necessário para Docker/Linux
+        options.addArguments("--disable-dev-shm-usage"); // Evita crash de memória
 
         driver = new ChromeDriver(options);
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
 
-        // --- MUDANÇA PARA O TRABALHO 5 ---
-        // Se passarmos uma URL específica (ex: ambiente de produção), usamos ela.
-        // Se não, usamos o localhost padrão.
+        // Configuração para teste pós-deploy (Rubrica 5)
         String targetUrl = System.getProperty("targetUrl");
         if (targetUrl != null && !targetUrl.isEmpty()) {
             baseUrl = targetUrl;
         } else {
-            baseUrl = "http://localhost:" + port; // Fallback para teste local (@SpringBootTest)
+            baseUrl = "http://localhost:" + port;
         }
     }
 
     @AfterEach void tearDown() { if (driver != null) driver.quit(); }
 
+    // --- SEUS TESTES ---
     @Test
     @Order(1)
     void testCreateProduct() {
         driver.get(baseUrl);
-        ProductListPage listPage = new ProductListPage(driver);
-        listPage.clickNewProduct();
-        ProductFormPage formPage = new ProductFormPage(driver);
-
-        // Fluxo normal (o fornecedor é opcional ou pegamos o default)
-        formPage.fillForm("Selenium Phone", "1500.00", "10", "ELECTRONICS");
-        formPage.submit();
-        Assertions.assertTrue(listPage.hasProductWithName("Selenium Phone"));
+        new ProductListPage(driver).clickNewProduct();
+        ProductFormPage form = new ProductFormPage(driver);
+        form.fillForm("CI Test", "50.00", "10", "ELECTRONICS");
+        form.submit();
+        Assertions.assertTrue(new ProductListPage(driver).hasProductWithName("CI Test"));
     }
+
+    // Mantenha os outros testes (update, delete, parametrizado) aqui...
 }

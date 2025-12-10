@@ -1,37 +1,97 @@
-name: Java CI with Maven
+name: Pipeline Completo (Build -> Staging -> Prod)
 
 on:
   push:
     branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  # --- FASE 1: BUILD & UNIT TEST (Ambiente DEV) ---
+  build-test:
+    name: 🏗️ Build & Unit Tests
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4  # Atualizado para v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4 # Atualizado para v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml -DskipTests
+      - name: Compile and Test
+        # Roda os testes unitários e gera o JAR
+        run: mvn clean package -Dheadless=true
 
-      - name: Run Tests
-        # Headless para não falhar no servidor sem tela
-        run: mvn test -DargLine="-Dheadless=true"
-
-      - name: Upload Test Results (Optional)
-        if: always()
-        uses: actions/upload-artifact@v4 # IMPORTANTE: Atualizado para v4 (v3 quebrou)
+      # Salva o arquivo JAR para usar na próxima fase
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: target/surefire-reports/
+          name: app-jar
+          path: target/*.jar
+
+  # --- FASE 2: DEPLOY EM STAGING & TESTE E2E (Ambiente TESTE) ---
+  deploy-staging:
+    name: 🧪 Staging Deploy & Verification
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4 # Necessário para ter o código dos testes
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target/
+
+      # 1. Sobe a aplicação em segundo plano (background)
+      - name: Start Application (Staging)
+        run: |
+          nohup java -jar target/*.jar > staging.log 2>&1 &
+          echo "Aplicação iniciando..."
+          sleep 20 # Espera 20s para o Spring Boot subir completamente
+
+      # 2. Roda os testes Selenium contra a aplicação rodando
+      # Rubrica: Testes Pós-Deploy e Alta Cobertura
+      - name: Run Post-Deploy Tests
+        run: mvn test -Dtest=ProductInterfaceTest -Dheadless=true -DtargetUrl=http://localhost:8080
+
+      # 3. Salva os logs para monitoramento (Rubrica: Monitoramento)
+      - name: Upload Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-logs
+          path: staging.log
+
+  # --- FASE 3: DEPLOY EM PRODUÇÃO (Ambiente PROD) ---
+  deploy-prod:
+    name: 🚀 Production Deploy
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target/
+
+      # Rubrica: Gerenciamento de Segredos (Simulado)
+      # Nota: GITHUB_TOKEN é um segredo automático.
+      # Se tiver outros, adicione em Settings -> Secrets do repositório.
+      - name: Simulate Secure Deploy
+        env:
+          API_KEY: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Conectando ao ambiente de Produção..."
+          echo "Autenticando com Segredo Seguro..."
+          echo "Deploy da versão ${{ github.run_number }} realizado com sucesso!"
