@@ -4,6 +4,7 @@
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-F2F4F9?style=for-the-badge&logo=spring-boot)
 ![Selenium](https://img.shields.io/badge/-selenium-%2343B02A?style=for-the-badge&logo=selenium&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white)
+[![CI/CD Completo (Dev -> Staging -> Prod)](https://github.com/GabrielMaurity/AT-Projeto-de-Bloco/actions/workflows/maven.yml/badge.svg)](https://github.com/GabrielMaurity/AT-Projeto-de-Bloco/actions/workflows/maven.yml)
 
 ## 🏗️ Arquitetura do Sistema
 O sistema foi desenvolvido seguindo os princípios de **Clean Code** e **Arquitetura em Camadas**:
