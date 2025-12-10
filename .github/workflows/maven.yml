@@ -1,17 +1,14 @@
-name: CI Simples
+name: CI Gradual - Passo 2 (Build + Staging)
 
 on: [push, workflow_dispatch]
 
 jobs:
-  build-and-test:
+  # === JOB 1: CONSTRUIR (Igual ao anterior, mas salva o arquivo no final) ===
+  build:
+    name: 🏗️ Build
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Baixa o código
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # 2. Configura o Java 17
+      - uses: actions/checkout@v4
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -19,6 +16,45 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Roda os testes (Modo Headless obrigatório para não travar)
-      - name: Testar
-        run: mvn clean test -DargLine="-Dheadless=true"
+      # Compila e roda testes unitários
+      - name: Maven Build
+        run: mvn clean package -DargLine="-Dheadless=true"
+
+      # --- A NOVIDADE COMEÇA AQUI ---
+      # Salva o arquivo .jar gerado para usar no próximo job
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+
+  # === JOB 2: STAGING (Baixa o arquivo e tenta rodar) ===
+  staging:
+    name: 🧪 Staging
+    needs: build # Só começa se o Build der certo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4 # Precisamos do código para rodar o Selenium depois
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Baixa o arquivo que o Job 1 salvou
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+          path: target/
+
+      # Tenta subir a aplicação (Deploy Simulado)
+      - name: Start App
+        run: |
+          nohup java -jar target/*.jar > staging.log 2>&1 &
+          echo "Aplicação iniciando... aguardando 15s..."
+          sleep 15
+
+      # Roda o teste de interface contra a aplicação rodando
+      - name: Teste Pós-Deploy (Selenium)
+        run: mvn test -Dtest=ProductInterfaceTest -DargLine="-Dheadless=true -DtargetUrl=http://localhost:8080"
