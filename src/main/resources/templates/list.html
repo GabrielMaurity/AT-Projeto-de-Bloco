@@ -27,6 +27,7 @@
             <td th:text="${p.category}"></td>
             <td>
                 <a th:href="@{/edit/{id}(id=${p.id})}" class="btn btn-sm btn-warning btn-edit">Editar</a>
+
                 <a th:href="@{/delete/{id}(id=${p.id})}" class="btn btn-sm btn-danger btn-delete"
                    onclick="return confirm('Tem certeza?')">Excluir</a>
             </td>

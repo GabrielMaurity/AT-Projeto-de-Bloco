@@ -29,21 +29,20 @@ class ProductInterfaceTest {
     void setup() {
         ChromeOptions options = new ChromeOptions();
 
-        // --- OBRIGATÓRIO PARA GITHUB ACTIONS ---
-        // Se receber a propriedade de sistema "headless", ativa o modo sem tela
+        // Configuração Robustez para CI/CD
         String headless = System.getProperty("headless");
         if ("true".equals(headless)) {
-            options.addArguments("--headless");
+            options.addArguments("--headless=new");
         }
-
         options.addArguments("--remote-allow-origins=*");
-        options.addArguments("--no-sandbox"); // Necessário para Docker/Linux
-        options.addArguments("--disable-dev-shm-usage"); // Evita crash de memória
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--window-size=1920,1080");
 
         driver = new ChromeDriver(options);
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-        // Configuração para teste pós-deploy (Rubrica 5)
+        // Lógica de URL Dinâmica (Local vs Produção)
         String targetUrl = System.getProperty("targetUrl");
         if (targetUrl != null && !targetUrl.isEmpty()) {
             baseUrl = targetUrl;
@@ -54,17 +53,74 @@ class ProductInterfaceTest {
 
     @AfterEach void tearDown() { if (driver != null) driver.quit(); }
 
-    // --- SEUS TESTES ---
+    // --- RUBRICA: Todas as Interações (CREATE) ---
     @Test
     @Order(1)
-    void testCreateProduct() {
+    @DisplayName("1. Fluxo: Criar Produto")
+    void testCreate() {
         driver.get(baseUrl);
         new ProductListPage(driver).clickNewProduct();
         ProductFormPage form = new ProductFormPage(driver);
-        form.fillForm("CI Test", "50.00", "10", "ELECTRONICS");
+        form.fillForm("Produto Base", "100.00", "10", "ELECTRONICS");
         form.submit();
-        Assertions.assertTrue(new ProductListPage(driver).hasProductWithName("CI Test"));
+        Assertions.assertTrue(new ProductListPage(driver).hasProductWithName("Produto Base"));
     }
 
-    // Mantenha os outros testes (update, delete, parametrizado) aqui...
+    // --- RUBRICA: Todas as Interações (UPDATE) ---
+    @Test
+    @Order(2)
+    @DisplayName("2. Fluxo: Editar Produto")
+    void testUpdate() {
+        driver.get(baseUrl);
+        ProductListPage list = new ProductListPage(driver);
+        // Clica no botão de editar do produto criado acima
+        list.clickEditProduct("Produto Base");
+
+        ProductFormPage form = new ProductFormPage(driver);
+        // Altera o nome
+        form.fillForm("Produto Editado", "150.00", "20", "BOOKS");
+        form.submit();
+
+        Assertions.assertTrue(list.hasProductWithName("Produto Editado"));
+    }
+
+    // --- RUBRICA: Todas as Interações (DELETE) ---
+    @Test
+    @Order(3)
+    @DisplayName("3. Fluxo: Excluir Produto")
+    void testDelete() {
+        driver.get(baseUrl);
+        ProductListPage list = new ProductListPage(driver);
+        list.deleteProductByName("Produto Editado");
+        Assertions.assertFalse(list.hasProductWithName("Produto Editado"));
+    }
+
+    // --- RUBRICA: Testes Parametrizados ---
+    @ParameterizedTest
+    @CsvSource({
+            "Celular Param, 1000.00, 5, ELECTRONICS",
+            "Livro Param, 50.00, 100, BOOKS"
+    })
+    @Order(4)
+    @DisplayName("4. Cenários Variados")
+    void testParameterized(String name, String price, String stock, String category) {
+        driver.get(baseUrl);
+        new ProductListPage(driver).clickNewProduct();
+        new ProductFormPage(driver).fillForm(name, price, stock, category);
+        new ProductFormPage(driver).submit();
+        Assertions.assertTrue(new ProductListPage(driver).hasProductWithName(name));
+    }
+
+    // --- RUBRICA: Mensagens de Erro ---
+    @Test
+    @Order(5)
+    @DisplayName("5. Validação de Erro")
+    void testError() {
+        driver.get(baseUrl + "/new");
+        ProductFormPage form = new ProductFormPage(driver);
+        form.fillForm("Erro", "-10.00", "5", "ELECTRONICS");
+        form.submit();
+        // Verifica se a mensagem de erro apareceu
+        Assertions.assertTrue(form.getErrorMessage().contains("Preço deve ser maior"));
+    }
 }

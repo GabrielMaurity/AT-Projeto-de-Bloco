@@ -1,6 +1,5 @@
 # Sistema de Gestão de Produtos e Fornecedores (Enterprise CRUD)
 
-![Build Status](https://github.com/SEU_USUARIO/SEU_REPO/actions/workflows/maven.yml/badge.svg)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.1.5-green)
 ![Selenium](https://img.shields.io/badge/Selenium-Testing-blue)
